@@ -121,7 +121,7 @@ function App() {
     if (currentStep !== 'edit' || !selectedImageId) return;
 
     const interval = setInterval(() => {
-      fetch(`http://localhost:3002/api/annotations?imageId=${selectedImageId}`)
+      fetch(`/.netlify/functions/annotations?imageId=${selectedImageId}`)
         .then(res => res.json())
         .then(data => {
           if (data.annotations && data.annotations.length > 0) {
