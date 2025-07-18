@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { UploadedImage, Annotation } from '../types';
+import { N8N_CONFIG, sendToN8N } from '../config/n8n';
 
 interface ChatWithAIProps {
   images: UploadedImage[];
@@ -14,8 +15,6 @@ interface ChatMessage {
   annotations?: Annotation[];
 }
 
-const N8N_ENDPOINT = 'https://aaron2003.app.n8n.cloud/webhook-test/5c086d2d-c2e0-4c4a-8487-df3d0e08fdd6';
-
 const ChatWithAI: React.FC<ChatWithAIProps> = ({ images, selectedImageId, setSelectedImageId, onApplyAnnotations }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
@@ -29,12 +28,11 @@ const ChatWithAI: React.FC<ChatWithAIProps> = ({ images, selectedImageId, setSel
     setInput('');
     setLoading(true);
     try {
-      const res = await fetch(N8N_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, imageId: selectedImageId })
+      const data = await sendToN8N(N8N_CONFIG.CHAT_ENDPOINT, { 
+        message: input, 
+        imageId: selectedImageId 
       });
-      const data = await res.json();
+      
       const aiMsg: ChatMessage = { sender: 'ai', text: data.reply, annotations: data.annotations };
       setMessages(prev => [...prev, aiMsg]);
       if (data.annotations && Array.isArray(data.annotations)) {
@@ -43,7 +41,7 @@ const ChatWithAI: React.FC<ChatWithAIProps> = ({ images, selectedImageId, setSel
         setPendingAnnotations(null);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { sender: 'ai', text: 'Error al contactar la IA.' }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: `Error al contactar la IA: ${err}` }]);
       setPendingAnnotations(null);
     } finally {
       setLoading(false);

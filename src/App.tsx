@@ -4,6 +4,7 @@ import FileUpload from './components/FileUpload';
 import ImageAnnotationCanvas from './components/ImageAnnotationCanvas';
 import { UploadedImage, Project } from './types';
 import ChatWithAI from './components/ChatWithAI';
+import { N8N_CONFIG, sendToN8N } from './config/n8n';
 
 function App() {
   const [currentStep, setCurrentStep] = useState<'upload' | 'chat' | 'edit'>('upload');
@@ -72,9 +73,6 @@ function App() {
     setShowSaveDialog(false);
   };
 
-  // Endpoint para enviar imágenes
-  const N8N_IMAGE_ENDPOINT = 'https://aaron2003.app.n8n.cloud/webhook-test/51852b95-ca76-4caf-9022-67c4ba832b60';
-
   // Función para convertir un archivo a base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -102,16 +100,15 @@ function App() {
           url: await fileToBase64(img.file)
         }))
       );
-      // Enviar al endpoint
-      const res = await fetch(N8N_IMAGE_ENDPOINT, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ images: imagesWithBase64 })
+      
+      // Enviar al endpoint de n8n
+      await sendToN8N(N8N_CONFIG.IMAGE_UPLOAD_ENDPOINT, { 
+        images: imagesWithBase64 
       });
-      if (!res.ok) throw new Error('Error al enviar imágenes a n8n');
+      
       setCurrentStep('chat');
     } catch (err: any) {
-      setUploadError('No se pudieron enviar las imágenes a n8n. Intenta de nuevo.');
+      setUploadError(`Error al enviar imágenes a n8n: ${err.message}`);
     } finally {
       setUploadingToN8N(false);
     }
